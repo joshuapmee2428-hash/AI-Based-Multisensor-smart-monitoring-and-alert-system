@@ -1,0 +1,49 @@
+!pip install micromlgen
+
+import pandas as pd
+
+# Load your CSV file
+df = pd.read_csv('air_quality.csv')import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
+from micromlgen import port
+
+# 1. Load your dataset
+df = pd.read_csv('air_quality.csv')
+
+# 2. Select sensor input features from your CSV
+temp_col = 'temp'
+hum_col  = 'hum'
+gas_col  = 'mq'
+
+X = df[[temp_col, hum_col, gas_col]]
+
+# 3. Automatically create target labels (0 = Good, 1 = Moderate, 2 = Poor)
+# based on your gas sensor values
+def classify_air(mq_value):
+    if mq_value < 1200:
+        return 0  # Good Air Quality
+    elif mq_value < 2400:
+        return 1  # Moderate
+    else:
+        return 2  # Poor / High Gas
+
+# Apply classification to create target 'y'
+y = df[gas_col].apply(classify_air)
+
+# 4. Train the Decision Tree AI model
+clf = DecisionTreeClassifier(max_depth=5)
+clf.fit(X.values, y.values)
+
+# 5. Convert the trained AI model to C++ code for ESP32
+cpp_code = port(clf)
+
+# 6. Save as 'model.h'
+with open('model.h', 'w') as f:
+    f.write(cpp_code)
+
+print("SUCCESS! 'model.h' generated successfully!")
+
+# Print column names
+print("YOUR CSV COLUMNS ARE:")
+print(df.columns.tolist())
+
